@@ -1,44 +1,65 @@
-name: aria2
-services:
-  server:
-    image: p3terx/aria2-pro:latest
-    container_name: aria2-server
-    restart: always
-    pull_policy: always
-    environment:
-      - PUID=65534
-      - PGID=65534
-      - UMASK_SET=022
-      - RPC_SECRET=P3TERX
-      - RPC_PORT=6800
-      - LISTEN_PORT=6888
-      - DISK_CACHE=64M
-      - IPV6_MODE=false
-      - UPDATE_TRACKERS=true
-      - CUSTOM_TRACKER_URL=
-      - TZ=${TZ:-America/New_York}
-    volumes:
-      - ${HOME}/Downloads/aria2:/downloads
-      - /var/lib/srv/$USER/docker/p3terx/aria2-pro/latest/rootfs/config/aria2:/config
-    ports:
-      - 6800:6800
-      - 6888:6888
-      - 6888:6888/udp
-    networks:
-      - aria
+# nginx proxy address - http://172.17.0.1:6880
 
-  web:
+name: aria2
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
     image: p3terx/ariang:latest
-    container_name: ariang
+    container_name: aria2-app
     restart: always
     pull_policy: always
     command: --port 6880 --ipv6
     ports:
-      - 6880:6880
+      - '172.17.0.1:6880:6880'
+    depends_on:
+      server: 
+        condition: service_started
+      
     networks:
-      - aria
+      - aria2
+
+  server:
+    image: p3terx/aria2-pro:latest
+    container_name: aria2-server
+    domainname: ${BASE_DOMAIN_NAME}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      - UMASK_SET=022
+      - RPC_PORT=6800
+      - DISK_CACHE=64M
+      - IPV6_MODE=false
+      - LISTEN_PORT=6888
+      - UPDATE_TRACKERS=true
+      - TZ=${TZ:-America/New_York}
+      - PUID=${SERVICE_USER:-$UID}
+      - PGID=${SERVICE_GROUP:-${GID:-$UID}}
+      - CUSTOM_TRACKER_URL=https://trackerslist.com/all_aria2.txt
+      - RPC_SECRET=${APP_SECRET_KEY:-ASSKJE9Hx9T47GM9yDjPt1yhpAgpB3jL}
+    volumes:
+      - '${HOME}/Downloads/aria2:/downloads'
+      - '/var/lib/srv/$USER/docker/p3terx/aria2-pro/latest/rootfs/config/aria2:/config'
+    ports:
+      - 6800:6800
+      - 6888:6888
+      - 6888:6888/udp
+    healthcheck:
+      test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/6800' || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - aria2
 
 networks:
-  aria:
-    name: aria
+  aria2:
+    name: aria2
     external: false
