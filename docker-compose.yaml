@@ -1,0 +1,66 @@
+# nginx proxy address - http://172.17.0.1:6880
+
+name: aria2
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: p3terx/ariang:latest
+    container_name: aria2-app
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    command: --port 6880 --ipv6
+    logging: *default-logging
+    ports:
+      - '172.17.0.1:6880:6880'
+    depends_on:
+      server:
+        condition: service_started
+
+    networks:
+      - aria2
+
+  server:
+    image: p3terx/aria2-pro:latest
+    container_name: aria2-server
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      PUID: ${SERVICE_USER:-0}
+      PGID: ${SERVICE_GROUP:-0}
+      UMASK_SET: 022
+      RPC_PORT: 6800
+      RPC_SECRET: ${APP_SECRET_KEY:-changeme_rpc_secret_min_32_chars}
+      DISK_CACHE: 64M
+      IPV6_MODE: false
+      LISTEN_PORT: 6888
+      UPDATE_TRACKERS: true
+      CUSTOM_TRACKER_URL: https://trackerslist.com/all_aria2.txt
+    volumes:
+      - './rootfs/config/aria2:/config'
+      - './rootfs/data/downloads:/downloads'
+    ports:
+      - '6800:6800'
+      - '6888:6888'
+      - '6888:6888/udp'
+    healthcheck:
+      test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/6800' || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - aria2
+
+networks:
+  aria2:
+    name: aria2
+    external: false
