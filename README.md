@@ -1,31 +1,32 @@
 ## 👋 Welcome to aria2 🚀
 
-Aria2 - Lightweight multi-protocol download utility
+Lightweight multi-protocol & multi-source download utility
 
 ## 📋 Description
 
-Aria2 is a lightweight multi-protocol & multi-source command-line download utility supporting HTTP/HTTPS, FTP, SFTP, BitTorrent and Metalink. Web UI included for easy management.
+Lightweight multi-protocol & multi-source download utility
 
 ## 🚀 Services
 
-- **app**: Aria2 with AriaNg web UI (`p3terx/aria2-pro:latest`)
+- **app**: p3terx/ariang:latest
+- **server**: p3terx/aria2-pro:latest
 
 ## 📦 Installation
 
-### Using curl
-```shell
-curl -q -LSsf "https://raw.githubusercontent.com/composemgr/aria2/main/docker-compose.yaml" | docker compose -f - up -d
+### Option 1: Quick Install
+```bash
+curl -q -LSsf "https://raw.githubusercontent.com/composemgr/aria2/main/docker-compose.yaml" -o compose.yml
 ```
 
-### Using git
-```shell
+### Option 2: Git Clone
+```bash
 git clone "https://github.com/composemgr/aria2" ~/.local/srv/docker/aria2
 cd ~/.local/srv/docker/aria2
 docker compose up -d
 ```
 
-### Using composemgr
-```shell
+### Option 3: Using composemgr
+```bash
 composemgr install aria2
 ```
 
@@ -35,23 +36,18 @@ composemgr install aria2
 
 ```shell
 TZ=America/New_York
-SERVICE_USER=1000
-SERVICE_GROUP=1000
-RPC_SECRET=changeme_rpc_secret     # RPC authentication token
-RPC_PORT=6800                      # RPC listen port
-LISTEN_PORT=6888                   # BT listen port
 ```
+
+See `docker-compose.yaml` for complete list of configurable options.
 
 ## 🌐 Access
 
-- **Web UI**: http://172.17.0.1:60048
-- **RPC**: http://172.17.0.1:6800/jsonrpc
-- **RPC Secret**: Use value from RPC_SECRET env var
+- **Web Interface**: http://172.17.0.1:6880
 
 ## 📂 Volumes
 
-- `./rootfs/config/aria2` - Configuration files
-- `./rootfs/data/downloads` - Downloaded files
+- `./rootfs/config/aria2` - Data storage
+- `./rootfs/data/downloads` - Data storage
 
 ## 🔍 Logging
 
@@ -61,10 +57,21 @@ docker compose logs -f app
 
 ## 🛠️ Management
 
-```shell
+```bash
+# Start services
 docker compose up -d
+
+# Stop services
 docker compose down
+
+# Update to latest images
 docker compose pull && docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Restart services
+docker compose restart
 ```
 
 ## 📋 Requirements
