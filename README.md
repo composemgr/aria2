@@ -46,8 +46,8 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/config/aria2` - Data storage
-- `./rootfs/data/downloads` - Data storage
+- `./volumes/config/aria2` - Data storage
+- `./volumes/data/downloads` - Data storage
 
 ## 🔍 Logging
 
