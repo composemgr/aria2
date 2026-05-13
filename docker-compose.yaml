@@ -16,13 +16,34 @@ services:
     pull_policy: always
     command: --port 6880 --ipv6
     logging: *default-logging
+    environment:
+      CONTAINER_NAME: aria2-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
     ports:
       - '172.17.0.1:6880:6880'
     depends_on:
       server:
         condition: service_started
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://aria2-app:6880'
+      - 'cloudflare.hostname=aria2.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.aria2-app.entrypoints=http'
+      - 'traefik.http.routers.aria2-app-secure.tls=true'
+      - 'traefik.http.routers.aria2-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.aria2-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.aria2-app.middlewares=aria2-app-https-redirect'
+      - 'traefik.http.routers.aria2-app-secure.entrypoints=https'
+      - 'traefik.http.routers.aria2-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.aria2-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.aria2-app-secure.service=aria2-app'
+      - 'traefik.http.services.aria2-app.loadbalancer.server.port=6880'
     networks:
       - aria2
+      - proxy
+      - cloudflare
 
   server:
     image: p3terx/aria2-pro:latest
@@ -33,6 +54,8 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: aria2-server
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       PUID: ${SERVICE_USER:-0}
       PGID: ${SERVICE_GROUP:-0}
       UMASK_SET: 022
@@ -56,10 +79,32 @@ services:
       timeout: 5s
       retries: 3
       start_period: 90s
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://aria2-server:6800'
+      - 'cloudflare.hostname=aria2.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.aria2-server.entrypoints=http'
+      - 'traefik.http.routers.aria2-server-secure.tls=true'
+      - 'traefik.http.routers.aria2-server.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.aria2-server-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.aria2-server.middlewares=aria2-server-https-redirect'
+      - 'traefik.http.routers.aria2-server-secure.entrypoints=https'
+      - 'traefik.http.routers.aria2-server-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.aria2-server-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.aria2-server-secure.service=aria2-server'
+      - 'traefik.http.services.aria2-server.loadbalancer.server.port=6800'
     networks:
       - aria2
+      - proxy
+      - cloudflare
 
 networks:
   aria2:
     name: aria2
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
