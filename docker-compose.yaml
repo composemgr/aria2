@@ -21,7 +21,6 @@ services:
     depends_on:
       server:
         condition: service_started
-
     networks:
       - aria2
 
@@ -38,7 +37,7 @@ services:
       PGID: ${SERVICE_GROUP:-0}
       UMASK_SET: 022
       RPC_PORT: 6800
-      RPC_SECRET: ${APP_SECRET_KEY:-changeme_rpc_secret_min_32_chars}
+      RPC_SECRET: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
       DISK_CACHE: 64M
       IPV6_MODE: false
       LISTEN_PORT: 6888
@@ -48,9 +47,9 @@ services:
       - './volumes/config/aria2:/config'
       - './volumes/data/downloads:/downloads'
     ports:
-      - '6800:6800'
-      - '6888:6888'
-      - '6888:6888/udp'
+      - '172.17.0.1:6800:6800'
+      - '172.17.0.1:6888:6888'
+      - '172.17.0.1:6888:6888/udp'
     healthcheck:
       test: timeout 10s bash -c ':> /dev/tcp/127.0.0.1/6800' || exit 1
       interval: 10s
